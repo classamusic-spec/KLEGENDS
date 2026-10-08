@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Kingdom Legends",
+    "slug": "kingdom-legends",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "kingdomlegends",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0D12",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.kingdomlegends.prototype"
+    },
+    "android": {
+      "package": "com.kingdomlegends.prototype",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0D12",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "Kingdom Legends",
+      "backgroundColor": "#0B0D12",
+      "themeColor": "#0B0D12"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-asset",
+      "expo-audio",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B0D12"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
