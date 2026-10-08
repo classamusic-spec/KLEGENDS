@@ -39,3 +39,17 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Kingdom Legends conventions
+
+Read `docs/ARCHITECTURE.md` before changing code. In short:
+
+- **Layers:** `src/domain`, `src/engine` and `src/content` are pure TypeScript (no React, React Native or Expo — ESLint enforces it). Screens live in `src/features`, routes in `src/app` are thin.
+- **Rewards only through `GameService`** (`src/services/gameService.ts`). Never grant or compute rewards in UI code. Pack contents are committed before any presentation; presentation can never change them.
+- **Skia objects never travel as props** of components that can re-render with a different value (React 19's dev Performance Tracks walk props and freeze web pages on CanvasKit objects). Use `Opaque<T>` (`src/graphics/skia/opaque.ts`), load inside the component, or remount with `key`.
+- **Worklets** capture only plain values and shared values; use `.get()`/`.set()`; reach JS with `scheduleOnRN`.
+- **SVG ids** come from `useSvgId` (web documents share ids across screens).
+- **Clocks and effects:** use `useFrameTime(active)` and pause it when the screen is unfocused, the element is off screen, the app is backgrounded or reduced motion is on. Mount effect layers only while visible.
+- **Accessibility:** every gesture needs a button; rarity is shape + label; use `aria-*` props for state; honor `useReducedMotion()`.
+- **Content:** Scripture is BSB verbatim from `src/content/scripture` (regenerate with `scripts/extract-scripture.mjs`); summaries and dramatizations are labeled; card ids are permanent. See `docs/CONTENT_GUIDELINES.md`.
+- **Checks before finishing:** `npm run verify`; for UI or treasury changes also `npm run e2e:web`.
