@@ -22,6 +22,9 @@ interface LoopState {
 const categoryVolume = (settings: Settings, category: SoundCategory): number =>
   category === 'music' ? settings.musicVolume : settings.effectsVolume;
 
+/** Media volumes must stay within [0, 1]; browsers throw on anything else. */
+const clampVolume = (v: number): number => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
+
 /**
  * Centralized audio engine on top of expo-audio.
  * - One-shots come from small round-robin pools so repeats can overlap.
@@ -67,7 +70,7 @@ class AudioEngine {
     if (!pool || !player) return;
     pool.next = (pool.next + 1) % pool.players.length;
     try {
-      player.volume = Math.min(1, volume);
+      player.volume = clampVolume(volume);
       if (options.rate !== undefined) player.setPlaybackRate(options.rate);
       player.seekTo(0).catch(() => undefined);
       player.play();
@@ -164,7 +167,11 @@ class AudioEngine {
     const spec = SOUND_MANIFEST[id];
     if (!spec) return;
     const duck = spec.category === 'music' ? this.duckFactor : 1;
-    loop.player.volume = Math.min(1, loop.level * spec.gain * categoryVolume(settingsStore.get(), spec.category) * duck);
+    try {
+      loop.player.volume = clampVolume(loop.level * spec.gain * categoryVolume(settingsStore.get(), spec.category) * duck);
+    } catch (error) {
+      console.warn(`[audio] volume ${id} failed`, error);
+    }
   }
 
   private refreshLoopVolumes(): void {
@@ -179,16 +186,19 @@ class AudioEngine {
     const start = loop.level;
     const steps = Math.max(1, Math.round(ms / 40));
     let step = 0;
-    loop.fadeTimer = setInterval(() => {
+    const timer = setInterval(() => {
       step++;
-      loop.level = start + ((target - start) * step) / steps;
-      this.applyLoopVolume(id, loop);
-      if (step >= steps) {
-        clearInterval(loop.fadeTimer);
-        loop.fadeTimer = undefined;
-        onDone?.();
+      const done = step >= steps;
+      // The last step lands exactly on the target (no floating-point overshoot).
+      loop.level = done ? target : start + ((target - start) * step) / steps;
+      if (done) {
+        clearInterval(timer);
+        if (loop.fadeTimer === timer) loop.fadeTimer = undefined;
       }
+      this.applyLoopVolume(id, loop);
+      if (done) onDone?.();
     }, 40);
+    loop.fadeTimer = timer;
   }
 }
 

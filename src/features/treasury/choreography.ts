@@ -117,7 +117,6 @@ export const playCelebration = ({ rarity, speed, reducedMotion, card, fx, dim, o
     if (rarity === 'epic') {
       fx.burst.set(withDelay(mid, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) })));
       fx.rays.set(withDelay(mid, withSequence(withTiming(0.8, { duration: 300 }), withTiming(0.35, { duration: 900 }))));
-      fx.rayAngle.set(withRepeat(withTiming(fx.rayAngle.get() + Math.PI * 2, { duration: 24000, easing: Easing.linear }), -1, false));
     }
     if (rarity === 'rare') {
       fx.burst.set(withDelay(mid, withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) })));
@@ -158,7 +157,6 @@ export const playCelebration = ({ rarity, speed, reducedMotion, card, fx, dim, o
   fx.burst.set(withDelay(tBurst, withTiming(1, { duration: 1100, easing: Easing.out(Easing.cubic) })));
   fx.aura.set(withDelay(tBurst, withTiming(0.7, { duration: 300 })));
   fx.rays.set(withDelay(tBurst, withSequence(withTiming(1, { duration: 300 }), withTiming(0.55, { duration: 1400 }))));
-  fx.rayAngle.set(withRepeat(withTiming(fx.rayAngle.get() + Math.PI * 2, { duration: 30000, easing: Easing.linear }), -1, false));
   fx.ribbonFade.set(withDelay(tBurst, withTiming(1, { duration: 900 })));
   timeline.at(tBurst + 150, onTitle);
   timeline.at(tBurst + 400, () => audio.play('shimmer_tail', { volume: 0.7 }));
@@ -211,7 +209,6 @@ export const dismissCard = (
   }
   fx.aura.set(withTiming(0, { duration: ms }));
   fx.rays.set(withTiming(0, { duration: ms }));
-  cancelAnimation(fx.rayAngle);
   dim.set(withTiming(0, { duration: 500 }));
   card.camera.set(withTiming(1, { duration: ms }));
   audio.duck(1);

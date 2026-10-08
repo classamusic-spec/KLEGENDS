@@ -10,7 +10,7 @@ import {
 } from '@shopify/react-native-skia';
 import { useMemo } from 'react';
 import { PixelRatio, View } from 'react-native';
-import { useDerivedValue, useSharedValue, type SharedValue } from 'react-native-reanimated';
+import { useDerivedValue, useSharedValue, type DerivedValue } from 'react-native-reanimated';
 
 import { BACK_FOIL, foilFor, getBackEffect, getCardEffect, type FoilParams } from './cardShader';
 import { CARD_H, CARD_RADIUS, CARD_W } from './layout';
@@ -20,15 +20,18 @@ import { rarityMaterials } from '@/design/tokens';
 import type { CardId } from '@/domain/cards';
 import type { VisualQuality } from '@/state/settings';
 
+/** Animated input: a shared or derived value (the card only reads it). */
+type Input = DerivedValue<number>;
+
 /** Maximum tilt in radians at |tilt| = 1 (~21°). */
 export const MAX_TILT = 0.37;
 const THICKNESS = 2.6; // card units
 
 interface Projection {
-  readonly tiltX: SharedValue<number>;
-  readonly tiltY: SharedValue<number>;
-  readonly rotation: SharedValue<number>;
-  readonly lift: SharedValue<number>;
+  readonly tiltX: Input;
+  readonly tiltY: Input;
+  readonly rotation: Input;
+  readonly lift: Input;
   readonly centerX: number;
   readonly centerY: number;
   readonly perspective: number;
@@ -98,15 +101,15 @@ export interface CardViewProps {
   /** On-screen card width in points. */
   readonly width: number;
   /** −1…1 tilt around the vertical axis (left/right). */
-  readonly tiltX: SharedValue<number>;
+  readonly tiltX: Input;
   /** −1…1 tilt around the horizontal axis (up/down). */
-  readonly tiltY: SharedValue<number>;
+  readonly tiltY: Input;
   /** Extra rotation around the vertical axis in radians (π shows the back). */
-  readonly rotation?: SharedValue<number>;
-  readonly scale?: SharedValue<number>;
+  readonly rotation?: Input;
+  readonly scale?: Input;
   /** 0…1 rarity glow during reveals. */
-  readonly glow?: SharedValue<number>;
-  readonly time?: SharedValue<number>;
+  readonly glow?: Input;
+  readonly time?: Input;
   readonly quality: VisualQuality;
   /** Transparent margin around the card for rotation and shadow. */
   readonly padding?: number;

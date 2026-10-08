@@ -87,6 +87,8 @@ export interface PackStageProps {
   readonly stackCount: number;
   /** Where the stack's top card lands for the reveal (screen points). */
   readonly revealRect: { readonly x: number; readonly y: number; readonly width: number };
+  /** False once the emptied wrapper has fallen away (it is then not drawn at all). */
+  readonly showWrapper?: boolean;
 }
 
 /**
@@ -95,7 +97,7 @@ export interface PackStageProps {
  * releases the card stack. Purely presentational: gestures and the reveal
  * state machine live in the treasury feature.
  */
-export function PackStage({ width, height, placement, motion, packTexture, cardBack, profileSeed = 7, stackCount, revealRect }: PackStageProps) {
+export function PackStage({ width, height, placement, motion, packTexture, cardBack, profileSeed = 7, stackCount, revealRect, showWrapper = true }: PackStageProps) {
   const effect = useMemo(() => getPackEffect(), []);
   const profile = useMemo(() => makeTearProfile(profileSeed), [profileSeed]);
   const textures = useMemo(() => stripTextureCoords(profile).map((p) => vec(p.x, p.y)), [profile]);
@@ -233,42 +235,44 @@ export function PackStage({ width, height, placement, motion, packTexture, cardB
           );
         })}
       </Group>
-      <Group transform={packTransform} opacity={packOpacity}>
-        {/* Warm light escaping from inside the opened seal. */}
-        <Group opacity={glowOpacity}>
-          <Oval x={PACK_W * 0.12} y={SEAL_Y - 30} width={PACK_W * 0.76} height={60}>
-            <RadialGradient c={vec(PACK_W / 2, SEAL_Y)} r={PACK_W * 0.42} colors={['rgba(255,226,160,0.75)', 'rgba(255,200,110,0.18)', 'rgba(255,200,110,0)']} />
-          </Oval>
-        </Group>
+      {showWrapper ? (
+        <Group transform={packTransform} opacity={packOpacity}>
+          {/* Warm light escaping from inside the opened seal. */}
+          <Group opacity={glowOpacity}>
+            <Oval x={PACK_W * 0.12} y={SEAL_Y - 30} width={PACK_W * 0.76} height={60}>
+              <RadialGradient c={vec(PACK_W / 2, SEAL_Y)} r={PACK_W * 0.42} colors={['rgba(255,226,160,0.75)', 'rgba(255,200,110,0.18)', 'rgba(255,200,110,0)']} />
+            </Oval>
+          </Group>
 
-        {/* Wrapper body, open along the torn part of the seal. */}
-        <Group clip={bodyClip}>
-          <Rect x={0} y={0} width={PACK_W} height={PACK_H}>
-            <Shader source={effect} uniforms={uniforms}>
-              <ImageShader image={pack} tx="decal" ty="decal" />
-            </Shader>
-          </Rect>
-        </Group>
-        <Path path={bodyEdge} style="stroke" strokeWidth={2.2} color="rgba(0,0,0,0.45)" transform={[{ translateY: 1.2 }]} />
-        <Path path={bodyEdge} style="stroke" strokeWidth={1.1} color="#EEE7D9" strokeJoin="round" />
+          {/* Wrapper body, open along the torn part of the seal. */}
+          <Group clip={bodyClip}>
+            <Rect x={0} y={0} width={PACK_W} height={PACK_H}>
+              <Shader source={effect} uniforms={uniforms}>
+                <ImageShader image={pack} tx="decal" ty="decal" />
+              </Shader>
+            </Rect>
+          </Group>
+          <Path path={bodyEdge} style="stroke" strokeWidth={2.2} color="rgba(0,0,0,0.45)" transform={[{ translateY: 1.2 }]} />
+          <Path path={bodyEdge} style="stroke" strokeWidth={1.1} color="#EEE7D9" strokeJoin="round" />
 
-        {/* The seal strip: a bending mesh that curls away and is cast off. */}
-        <Group opacity={stripOpacity}>
-          <Vertices vertices={stripVertices} textures={textures} indices={indices} mode="triangles">
-            <Shader source={effect} uniforms={stripUniforms}>
-              <ImageShader image={pack} tx="decal" ty="decal" />
-            </Shader>
-          </Vertices>
-          <Path path={stripEdge} style="stroke" strokeWidth={1.1} color="#E6DFD2" strokeJoin="round" />
-        </Group>
+          {/* The seal strip: a bending mesh that curls away and is cast off. */}
+          <Group opacity={stripOpacity}>
+            <Vertices vertices={stripVertices} textures={textures} indices={indices} mode="triangles">
+              <Shader source={effect} uniforms={stripUniforms}>
+                <ImageShader image={pack} tx="decal" ty="decal" />
+              </Shader>
+            </Vertices>
+            <Path path={stripEdge} style="stroke" strokeWidth={1.1} color="#E6DFD2" strokeJoin="round" />
+          </Group>
 
-        {/* Light spilling over the torn edge. */}
-        <Group opacity={glowOpacity} blendMode="plus">
-          <Oval x={PACK_W * 0.2} y={SEAL_Y - 22} width={PACK_W * 0.6} height={30}>
-            <RadialGradient c={vec(PACK_W / 2, SEAL_Y - 6)} r={PACK_W * 0.3} colors={['rgba(255,220,150,0.35)', 'rgba(255,220,150,0)']} />
-          </Oval>
+          {/* Light spilling over the torn edge. */}
+          <Group opacity={glowOpacity} blendMode="plus">
+            <Oval x={PACK_W * 0.2} y={SEAL_Y - 22} width={PACK_W * 0.6} height={30}>
+              <RadialGradient c={vec(PACK_W / 2, SEAL_Y - 6)} r={PACK_W * 0.3} colors={['rgba(255,220,150,0.35)', 'rgba(255,220,150,0)']} />
+            </Oval>
+          </Group>
         </Group>
-      </Group>
+      ) : null}
     </Canvas>
   );
 }

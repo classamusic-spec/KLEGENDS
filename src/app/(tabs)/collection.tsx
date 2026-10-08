@@ -1,11 +1,3 @@
-import { View } from 'react-native';
+import { CollectionScreen } from '@/features/collection/CollectionScreen';
 
-import { AppText } from '@/ui/AppText';
-
-export default function Screen() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <AppText variant="displayM">collection</AppText>
-    </View>
-  );
-}
+export default CollectionScreen;

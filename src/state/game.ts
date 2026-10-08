@@ -71,6 +71,12 @@ export const useIsFavorite = (editionId: string): boolean =>
 
 export const useCopies = (editionId: string): number => useGame((db) => db.inventory[editionId]?.copies ?? 0, 0);
 
-/** Daily pack availability; `now` is passed in so callers control re-evaluation. */
-export const useDailyPackStatus = (now: Date): DailyPackStatus | undefined =>
-  useGame((db) => dailyPackStatus(db.dailyClaim, now.toISOString(), -now.getTimezoneOffset()), undefined);
+/**
+ * Daily pack availability at `now` (callers re-render with a fresh `now` to
+ * notice the day rolling over). Evaluated outside the store selector, which
+ * is cached per database snapshot.
+ */
+export const useDailyPackStatus = (now: Date): DailyPackStatus | undefined => {
+  const claim = useGame((db) => db.dailyClaim, undefined);
+  return claim ? dailyPackStatus(claim, now.toISOString(), -now.getTimezoneOffset()) : undefined;
+};

@@ -8,6 +8,7 @@ import { Icon, type IconName } from './Icon';
 import { springs } from '@/design/motion';
 import { colors, layout, radii } from '@/design/tokens';
 import { feedback } from '@/feedback';
+import { useSvgId } from './svgId';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
@@ -42,10 +43,9 @@ const SECONDARY_STOPS: readonly StopSpec[] = [
 
 /** Engraved metal face drawn with SVG so it renders identically on every platform. */
 function ButtonFace({ variant }: { variant: ButtonVariant }) {
-  if (variant === 'ghost') return null;
   const primary = variant === 'primary';
-  // Gradient ids are document-global on the web: one id per distinct gradient.
-  const gradientId = primary ? 'kl-button-primary' : 'kl-button-secondary';
+  const gradientId = useSvgId('kl-button');
+  if (variant === 'ghost') return null;
   return (
     <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none" aria-hidden>
       <Defs>
@@ -103,7 +103,8 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: inactive, busy: loading }}
+      aria-disabled={inactive}
+      aria-busy={loading}
       disabled={inactive}
       onPress={handlePress}
       onPressIn={() => pressed.set(withSpring(1, springs.press))}

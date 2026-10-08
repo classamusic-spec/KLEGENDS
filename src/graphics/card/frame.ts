@@ -42,7 +42,9 @@ export const drawRarityEmblem = (canvas: SkCanvas, rarity: Rarity, cx: number, c
 
 /** The rarity plaque centered on the top edge of the art. */
 const drawCartouche = (canvas: SkCanvas, fonts: SkiaFonts, rarity: Rarity, ramp: MetalRamp, y: number, labelColor: string, wide: boolean) => {
-  const w = wide ? 124 : 104;
+  const label = RARITY_LABEL[rarity].toUpperCase();
+  // Long labels ("LEGENDARY" on an undiscovered standard frame) get a longer plaque.
+  const w = wide ? 124 : label.length > 6 ? 124 : 104;
   const h = wide ? 22 : 19;
   const x = (CARD_W - w) / 2;
   const plaque = polygon([
@@ -55,7 +57,6 @@ const drawCartouche = (canvas: SkCanvas, fonts: SkiaFonts, rarity: Rarity, ramp:
   ]);
   canvas.drawPath(plaque, makePaint({ color: '#0C0E13', alpha: 0.94 }));
   canvas.drawPath(plaque, makePaint({ shader: metalShader(ramp, x, y, w, h), stroke: 1.3 }));
-  const label = RARITY_LABEL[rarity].toUpperCase();
   drawRarityEmblem(canvas, rarity, x + 20, y + h / 2, wide ? 11 : 9.5, ramp);
   drawText(canvas, fonts, {
     text: label,

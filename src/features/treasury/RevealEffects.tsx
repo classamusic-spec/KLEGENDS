@@ -1,6 +1,6 @@
-import { BlurMask, Canvas, Circle, Group, Path, Points, RadialGradient, Rect, Skia, vec } from '@shopify/react-native-skia';
+import { BlurMask, Canvas, Circle, Path, Points, RadialGradient, Skia, vec } from '@shopify/react-native-skia';
 import { useMemo } from 'react';
-import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
+import { useDerivedValue, type DerivedValue, type SharedValue } from 'react-native-reanimated';
 
 import { rng } from '@/graphics/skia/draw';
 
@@ -10,8 +10,6 @@ export interface RevealFx {
   readonly aura: SharedValue<number>;
   /** Rotating light rays (epic, legendary). */
   readonly rays: SharedValue<number>;
-  /** Ray rotation in radians. */
-  readonly rayAngle: SharedValue<number>;
   /** Expanding burst ring at the moment of revelation. */
   readonly burst: SharedValue<number>;
   /** Ribbon of light tracing the card edge (legendary). */
@@ -27,7 +25,16 @@ export interface RevealEffectsProps {
   /** Glow color of the revealed rarity (hex). */
   readonly color: string;
   readonly fx: RevealFx;
+  /**
+   * Scene clock (seconds). Rays turn with it, so they stop whenever the
+   * clock does (screen hidden, app backgrounded, reduced motion).
+   */
+  readonly time: DerivedValue<number>;
   readonly showRays: boolean;
+  /** The light ribbon that traces the card (legendary). */
+  readonly showRibbon: boolean;
+  /** True while the reveal is being celebrated (burst, sparks, ribbon). */
+  readonly celebrating: boolean;
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -41,7 +48,7 @@ const hexToRgba = (hex: string, alpha: number) => {
  * Light behind the revealed card. Majestic rather than chaotic: no flashes
  * to white, no shake — contrast, timing and a few controlled light sources.
  */
-export function RevealEffects({ width, height, card, color, fx, showRays }: RevealEffectsProps) {
+export function RevealEffects({ width, height, card, color, fx, time, showRays, showRibbon, celebrating }: RevealEffectsProps) {
   const cx = card.x + card.width / 2;
   const cy = card.y + card.height / 2;
   const reach = Math.max(card.width, card.height);
@@ -71,7 +78,7 @@ export function RevealEffects({ width, height, card, color, fx, showRays }: Reve
   }, []);
 
   const auraOpacity = useDerivedValue(() => fx.aura.get());
-  const rayTransform = useDerivedValue(() => [{ translateX: cx }, { translateY: cy }, { rotate: fx.rayAngle.get() }]);
+  const rayTransform = useDerivedValue(() => [{ translateX: cx }, { translateY: cy }, { rotate: time.get() * 0.22 }]);
   const rayOpacity = useDerivedValue(() => fx.rays.get() * 0.55);
   const burstRadius = useDerivedValue(() => reach * (0.35 + fx.burst.get() * 0.9));
   const burstOpacity = useDerivedValue(() => {
@@ -89,34 +96,34 @@ export function RevealEffects({ width, height, card, color, fx, showRays }: Reve
   const ribbonEnd = useDerivedValue(() => fx.ribbon.get());
   const ribbonOpacity = useDerivedValue(() => (fx.ribbon.get() > 0 ? 1 - fx.ribbonFade.get() : 0));
 
+  // Opacity and blending are applied per paint (no offscreen layers), and the
+  // burst, sparks and ribbon only exist while the reveal is being celebrated.
   return (
     <Canvas style={{ width, height, position: 'absolute' }} pointerEvents="none">
-      <Group opacity={auraOpacity} blendMode="plus">
-        <Rect x={0} y={0} width={width} height={height}>
-          <RadialGradient c={vec(cx, cy)} r={reach * 0.95} colors={[hexToRgba(color, 0.5), hexToRgba(color, 0.16), hexToRgba(color, 0)]} positions={[0, 0.45, 1]} />
-        </Rect>
-      </Group>
+      <Circle cx={cx} cy={cy} r={reach * 0.95} opacity={auraOpacity} blendMode="plus">
+        <RadialGradient c={vec(cx, cy)} r={reach * 0.95} colors={[hexToRgba(color, 0.5), hexToRgba(color, 0.16), hexToRgba(color, 0)]} positions={[0, 0.45, 1]} />
+      </Circle>
       {showRays ? (
-        <Group transform={rayTransform} opacity={rayOpacity} blendMode="plus">
-          <Path path={rays}>
-            <RadialGradient c={vec(0, 0)} r={reach * 1.3} colors={[hexToRgba(color, 0.55), hexToRgba(color, 0.12), hexToRgba(color, 0)]} positions={[0, 0.4, 1]} />
-          </Path>
-        </Group>
-      ) : null}
-      <Group opacity={burstOpacity} blendMode="plus">
-        <Circle cx={cx} cy={cy} r={burstRadius} style="stroke" strokeWidth={10} color={hexToRgba(color, 0.7)}>
-          <BlurMask blur={14} style="normal" />
-        </Circle>
-      </Group>
-      <Group opacity={sparkOpacity} blendMode="plus">
-        <Points points={sparks} mode="points" color={hexToRgba(color, 0.95)} style="stroke" strokeWidth={3} strokeCap="round" />
-      </Group>
-      <Group opacity={ribbonOpacity} blendMode="plus">
-        <Path path={ribbonPath} style="stroke" strokeWidth={7} color={hexToRgba(color, 0.55)} start={0} end={ribbonEnd}>
-          <BlurMask blur={8} style="normal" />
+        <Path path={rays} transform={rayTransform} opacity={rayOpacity} blendMode="plus">
+          <RadialGradient c={vec(0, 0)} r={reach * 1.3} colors={[hexToRgba(color, 0.55), hexToRgba(color, 0.12), hexToRgba(color, 0)]} positions={[0, 0.4, 1]} />
         </Path>
-        <Path path={ribbonPath} style="stroke" strokeWidth={1.6} color="rgba(255,244,214,0.95)" start={0} end={ribbonEnd} />
-      </Group>
+      ) : null}
+      {celebrating ? (
+        <>
+          <Circle cx={cx} cy={cy} r={burstRadius} style="stroke" strokeWidth={10} color={hexToRgba(color, 0.7)} opacity={burstOpacity} blendMode="plus">
+            <BlurMask blur={14} style="normal" />
+          </Circle>
+          <Points points={sparks} mode="points" color={hexToRgba(color, 0.95)} style="stroke" strokeWidth={3} strokeCap="round" opacity={sparkOpacity} blendMode="plus" />
+        </>
+      ) : null}
+      {celebrating && showRibbon ? (
+        <>
+          <Path path={ribbonPath} style="stroke" strokeWidth={7} color={hexToRgba(color, 0.55)} start={0} end={ribbonEnd} opacity={ribbonOpacity} blendMode="plus">
+            <BlurMask blur={8} style="normal" />
+          </Path>
+          <Path path={ribbonPath} style="stroke" strokeWidth={1.6} color="rgba(255,244,214,0.95)" start={0} end={ribbonEnd} opacity={ribbonOpacity} blendMode="plus" />
+        </>
+      ) : null}
     </Canvas>
   );
 }

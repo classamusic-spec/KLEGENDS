@@ -65,6 +65,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="packs" />
           <Stack.Screen name="treasury" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
           <Stack.Screen name="card/[cardId]" />
           <Stack.Screen name="quest/[questId]" options={{ gestureEnabled: false }} />

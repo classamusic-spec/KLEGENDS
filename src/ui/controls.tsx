@@ -23,7 +23,7 @@ export function IconButton({ icon, label, onPress, active = false, size = 44, te
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
+      aria-selected={active}
       hitSlop={6}
       onPress={() => {
         feedback.tap();
@@ -54,7 +54,7 @@ export function Chip({ label, selected, onPress, testID }: ChipProps) {
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      aria-selected={selected}
       accessibilityLabel={`${label} filter`}
       onPress={() => {
         feedback.select();

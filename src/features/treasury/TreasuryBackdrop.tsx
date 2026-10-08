@@ -1,4 +1,4 @@
-import { Canvas, Group, LinearGradient, Oval, Path, Points, RadialGradient, Rect, Skia, vec } from '@shopify/react-native-skia';
+import { Canvas, LinearGradient, Oval, Path, Points, RadialGradient, Rect, Skia, vec } from '@shopify/react-native-skia';
 import { useMemo } from 'react';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 
@@ -87,14 +87,13 @@ export function TreasuryBackdrop({ width, height, pedestal, time, dim, light }: 
         <Rect key={i} x={0} y={height * (0.12 + i * 0.085)} width={width} height={0.8} color="rgba(255,255,255,0.025)" />
       ))}
       {/* Shaft of light. */}
-      <Group opacity={beamOpacity} blendMode="plus">
-        <Path path={cone}>
-          <LinearGradient start={vec(0, 0)} end={vec(0, pedestal.y)} colors={['rgba(255,226,170,0.20)', 'rgba(255,214,150,0.07)', 'rgba(255,214,150,0.02)']} />
-        </Path>
-        <Oval x={pedestal.x - pedestal.width} y={pedestal.y - 60} width={pedestal.width * 2} height={120}>
-          <RadialGradient c={vec(pedestal.x, pedestal.y)} r={pedestal.width} colors={['rgba(255,214,150,0.22)', 'rgba(255,214,150,0)']} />
-        </Oval>
-      </Group>
+      {/* Opacity and blending per paint: no offscreen layers for full-screen light. */}
+      <Path path={cone} opacity={beamOpacity} blendMode="plus">
+        <LinearGradient start={vec(0, 0)} end={vec(0, pedestal.y)} colors={['rgba(255,226,170,0.20)', 'rgba(255,214,150,0.07)', 'rgba(255,214,150,0.02)']} />
+      </Path>
+      <Oval x={pedestal.x - pedestal.width} y={pedestal.y - 60} width={pedestal.width * 2} height={120} opacity={beamOpacity} blendMode="plus">
+        <RadialGradient c={vec(pedestal.x, pedestal.y)} r={pedestal.width} colors={['rgba(255,214,150,0.22)', 'rgba(255,214,150,0)']} />
+      </Oval>
       {/* Pedestal: a stone plinth with a gilded edge. */}
       <Rect x={pedestal.x - pedestal.width * 0.42} y={pedestal.y} width={pedestal.width * 0.84} height={height - pedestal.y}>
         <LinearGradient start={vec(0, pedestal.y)} end={vec(0, height)} colors={['#2A2723', '#16151A', '#0B0B0E']} />
@@ -105,10 +104,8 @@ export function TreasuryBackdrop({ width, height, pedestal, time, dim, light }: 
       </Oval>
       <Oval rect={pedestalTop} style="stroke" strokeWidth={1} color="rgba(232,203,142,0.45)" />
       {/* Dust in the beam. */}
-      <Group opacity={moteOpacity} blendMode="plus">
-        <Points points={moteA} mode="points" color="rgba(255,226,170,0.55)" style="stroke" strokeWidth={2.2} strokeCap="round" />
-        <Points points={moteB} mode="points" color="rgba(255,226,170,0.35)" style="stroke" strokeWidth={1.3} strokeCap="round" />
-      </Group>
+      <Points points={moteA} mode="points" color="rgba(255,226,170,0.55)" style="stroke" strokeWidth={2.2} strokeCap="round" opacity={moteOpacity} blendMode="plus" />
+      <Points points={moteB} mode="points" color="rgba(255,226,170,0.35)" style="stroke" strokeWidth={1.3} strokeCap="round" opacity={moteOpacity} blendMode="plus" />
       {/* Vignette and cinematic dimming. */}
       <Rect x={0} y={0} width={width} height={height}>
         <RadialGradient c={vec(width / 2, height * 0.45)} r={Math.max(width, height) * 0.75} colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']} positions={[0, 0.5, 1]} />

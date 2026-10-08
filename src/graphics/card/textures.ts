@@ -1,4 +1,4 @@
-import { ClipOp, ImageFormat, Skia, type SkImage } from '@shopify/react-native-skia';
+import { ClipOp, ImageFormat, Skia, type SkImage, type SkRect } from '@shopify/react-native-skia';
 import { useEffect, useState } from 'react';
 
 import { bakeArtLayers, type ArtLayers } from './bakeArt';
@@ -179,6 +179,56 @@ export const loadCardThumbnail = (cardId: CardId, widthPx: number, undiscovered:
     thumbCache.set(key, pending);
   }
   return pending;
+};
+
+const illustrationCache = new Map<string, Promise<string>>();
+
+/**
+ * A card's illustration alone (no frame), cropped to `crop` in card units
+ * (default: the visible art window), as a PNG data URI. Used for story
+ * scenes in quests.
+ */
+export const loadIllustration = (cardId: CardId, widthPx: number, crop?: SkRect): Promise<string> => {
+  const card = catalog.card(cardId);
+  if (!card) return Promise.reject(new Error(`Unknown card ${cardId}`));
+  const layout = layoutFor(card.rarity);
+  const window = crop ?? layout.art;
+  const scale = Math.min(4, Math.max(0.5, Math.round((widthPx / window.width) * 4) / 4));
+  const key = `${cardId}|${scale}|${window.x},${window.y},${window.width},${window.height}`;
+  let pending = illustrationCache.get(key);
+  if (!pending) {
+    pending = (async () => {
+      await yieldToUi();
+      const art = bakeArtLayers(sceneFor(card.artKey), layout, scale, 'full');
+      const flat = bakeImage(window.width * scale, window.height * scale, (canvas) => {
+        const dst = { x: (art.area.x - window.x) * scale, y: (art.area.y - window.y) * scale, width: art.area.width * scale, height: art.area.height * scale };
+        const src = (img: SkImage) => ({ x: 0, y: 0, width: img.width(), height: img.height() });
+        canvas.drawImageRect(art.back, src(art.back), dst, paintless());
+        canvas.drawImageRect(art.front, src(art.front), dst, paintless());
+      });
+      return `data:image/png;base64,${flat.encodeToBase64(ImageFormat.PNG, 100)}`;
+    })();
+    pending.catch(() => illustrationCache.delete(key));
+    illustrationCache.set(key, pending);
+  }
+  return pending;
+};
+
+export const useIllustration = (cardId: CardId, widthPx: number, crop?: SkRect): string | null => {
+  const [state, setState] = useState<{ key: string; uri: string } | null>(null);
+  const key = `${cardId}|${widthPx}|${crop ? `${crop.x},${crop.y},${crop.width},${crop.height}` : 'art'}`;
+  useEffect(() => {
+    let alive = true;
+    loadIllustration(cardId, widthPx, crop)
+      .then((uri) => alive && setState({ key, uri }))
+      .catch((error: unknown) => console.warn('[textures] illustration failed', error));
+    return () => {
+      alive = false;
+    };
+    // `crop` is compared through `key`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardId, widthPx, key]);
+  return state?.key === key ? state.uri : null;
 };
 
 const paintless = () => {

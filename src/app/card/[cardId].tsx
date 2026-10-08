@@ -1,13 +1,8 @@
 import { useLocalSearchParams } from 'expo-router';
-import { View } from 'react-native';
 
-import { AppText } from '@/ui/AppText';
+import { ArtifactChamberScreen } from '@/features/cards/ArtifactChamberScreen';
 
 export default function CardRoute() {
-  const { cardId } = useLocalSearchParams<{ cardId: string }>();
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <AppText variant="displayM">{cardId}</AppText>
-    </View>
-  );
+  const { cardId, panel } = useLocalSearchParams<{ cardId: string; panel?: string }>();
+  return <ArtifactChamberScreen key={cardId} cardId={cardId} panel={panel === 'story' ? 'story' : undefined} />;
 }

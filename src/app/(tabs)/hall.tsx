@@ -1,11 +1,3 @@
-import { View } from 'react-native';
+import { HallScreen } from '@/features/hall/HallScreen';
 
-import { AppText } from '@/ui/AppText';
-
-export default function Screen() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <AppText variant="displayM">hall</AppText>
-    </View>
-  );
-}
+export default HallScreen;

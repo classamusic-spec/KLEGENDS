@@ -53,11 +53,10 @@ const useCardMotion = (): CardMotion => {
 const useRevealFx = (): RevealFx => {
   const aura = useSharedValue(0);
   const rays = useSharedValue(0);
-  const rayAngle = useSharedValue(0);
   const burst = useSharedValue(0);
   const ribbon = useSharedValue(0);
   const ribbonFade = useSharedValue(0);
-  return useMemo(() => ({ aura, rays, rayAngle, burst, ribbon, ribbonFade }), [aura, rays, rayAngle, burst, ribbon, ribbonFade]);
+  return useMemo(() => ({ aura, rays, burst, ribbon, ribbonFade }), [aura, rays, burst, ribbon, ribbonFade]);
 };
 
 export interface RevealStageProps {
@@ -70,6 +69,8 @@ export interface RevealStageProps {
   /** Room dimming, shared with the backdrop. */
   readonly dim: SharedValue<number>;
   readonly time: SharedValue<number>;
+  /** Clock for ambient motion (rays); frozen in Performance quality. */
+  readonly ambientTime: SharedValue<number>;
   /** 0 until the extracted stack has arrived at the reveal position. */
   readonly cardVisible: SharedValue<number>;
   readonly onInspect: (cardId: CardId) => void;
@@ -91,6 +92,7 @@ export function RevealStage({
   speed,
   dim,
   time,
+  ambientTime,
   cardVisible,
   onInspect,
   onStory,
@@ -250,7 +252,10 @@ export function RevealStage({
         card={reveal}
         color={material.glow}
         fx={fx}
+        time={ambientTime}
         showRays={rarity === 'epic' || rarity === 'legendary'}
+        showRibbon={rarity === 'legendary'}
+        celebrating={phase === 'RARITY_CELEBRATION'}
       />
 
       {/* Progress: one mark per card, shaped by rarity once revealed. */}

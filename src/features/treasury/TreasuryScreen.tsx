@@ -15,6 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { Timeline } from './choreography';
 import { computeTreasuryLayout, type TreasuryLayout } from './layout';
@@ -112,6 +113,9 @@ export function TreasuryScreen({ grantId, onClose, onInspect, onStory, onCollect
   const timeline = useTimeline();
 
   const time = useFrameTime(focused && !state.paused && !reducedMotion);
+  // "Performance" quality keeps the room still: no drifting dust or turning rays.
+  const stillTime = useSharedValue(0);
+  const ambientTime = quality === 'performance' ? stillTime : time;
   const m = usePackMotion(time);
   const dim = useSharedValue(0);
   const light = useSharedValue(0);
@@ -166,6 +170,7 @@ export function TreasuryScreen({ grantId, onClose, onInspect, onStory, onCollect
   // Handoff: the emptied wrapper falls away and the stack moves to the reveal position.
   // A resumed opening starts here directly, with the pack already gone.
   const handedOff = useRef(false);
+  const [wrapperGone, setWrapperGone] = useState(false);
   useEffect(() => {
     if (!REVEAL_PHASES.has(phase) || handedOff.current) return;
     handedOff.current = true;
@@ -177,10 +182,11 @@ export function TreasuryScreen({ grantId, onClose, onInspect, onStory, onCollect
       m.handoff.set(1);
       light.set(withTiming(1, { duration: 300 }));
       cardVisible.set(1);
+      timeline.at(0, () => setWrapperGone(true));
       return;
     }
     timeline.at(80, () => audio.play('wrapper_fall'));
-    m.fall.set(withTiming(1, { duration: 900, easing: Easing.in(Easing.quad) }));
+    m.fall.set(withTiming(1, { duration: 900, easing: Easing.in(Easing.quad) }, () => scheduleOnRN(setWrapperGone, true)));
     m.handoff.set(withDelay(120, withTiming(1, { duration: 720, easing: easings.standard }, () => cardVisible.set(1))));
   }, [phase, state.resumed, reducedMotion, m, light, cardVisible, timeline]);
 
@@ -215,7 +221,7 @@ export function TreasuryScreen({ grantId, onClose, onInspect, onStory, onCollect
 
   return (
     <View style={styles.root} testID="treasury">
-      <TreasuryBackdrop width={width} height={height} pedestal={layout.pedestal} time={time} dim={dim} light={light} />
+      <TreasuryBackdrop width={width} height={height} pedestal={layout.pedestal} time={ambientTime} dim={dim} light={light} />
 
       <GestureDetector gesture={controls.gesture}>
         <View style={StyleSheet.absoluteFill} testID="treasury-pack">
@@ -229,6 +235,7 @@ export function TreasuryScreen({ grantId, onClose, onInspect, onStory, onCollect
               cardBack={backHandle}
               stackCount={stackCount}
               revealRect={layout.reveal}
+              showWrapper={!wrapperGone}
             />
           ) : null}
         </View>
@@ -246,6 +253,7 @@ export function TreasuryScreen({ grantId, onClose, onInspect, onStory, onCollect
           speed={speed}
           dim={dim}
           time={time}
+          ambientTime={ambientTime}
           cardVisible={cardVisible}
           onInspect={onInspect}
           onStory={onStory}
