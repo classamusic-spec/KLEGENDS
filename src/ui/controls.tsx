@@ -73,7 +73,7 @@ export function Chip({ label, selected, onPress, testID }: ChipProps) {
 export function OrnamentDivider({ width = 180, style }: { width?: number; style?: StyleProp<ViewStyle> }) {
   const mid = width / 2;
   return (
-    <View style={[styles.divider, style]} accessible={false}>
+    <View style={[styles.divider, style]} aria-hidden>
       <Svg width={width} height={10}>
         <Rect x={0} y={4.5} width={mid - 10} height={1} fill={colors.borderGold} />
         <Rect x={mid + 10} y={4.5} width={mid - 10} height={1} fill={colors.borderGold} />

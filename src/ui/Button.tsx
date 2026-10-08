@@ -44,16 +44,18 @@ const SECONDARY_STOPS: readonly StopSpec[] = [
 function ButtonFace({ variant }: { variant: ButtonVariant }) {
   if (variant === 'ghost') return null;
   const primary = variant === 'primary';
+  // Gradient ids are document-global on the web: one id per distinct gradient.
+  const gradientId = primary ? 'kl-button-primary' : 'kl-button-secondary';
   return (
-    <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" accessible={false}>
+    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none" aria-hidden>
       <Defs>
-        <LinearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           {(primary ? PRIMARY_STOPS : SECONDARY_STOPS).map(([offset, color, opacity]) => (
             <Stop key={offset} offset={offset} stopColor={color} stopOpacity={opacity} />
           ))}
         </LinearGradient>
       </Defs>
-      <Rect x="0.5" y="0.5" width="99.5%" height="98%" rx={radii.md} fill="url(#face)" stroke={primary ? '#7A5B2C' : colors.borderGold} strokeWidth={1} />
+      <Rect x="0.5" y="0.5" width="99.5%" height="98%" rx={radii.md} fill={`url(#${gradientId})`} stroke={primary ? '#7A5B2C' : colors.borderGold} strokeWidth={1} />
       <Rect
         x="2"
         y="1.6"

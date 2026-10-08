@@ -19,7 +19,7 @@ function Corner({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
         flipY ? { bottom: 3 } : { top: 3 },
         { transform: [{ scaleX: flipX ? -1 : 1 }, { scaleY: flipY ? -1 : 1 }] },
       ]}
-      accessible={false}
+      aria-hidden
     >
       <Path d="M1.5 12V4.5a3 3 0 0 1 3-3H12" stroke={colors.borderGoldBright} strokeWidth={1.1} fill="none" strokeLinecap="round" />
       <Path d="M4.6 7.4 7.4 4.6" stroke={colors.borderGoldBright} strokeWidth={1} strokeLinecap="round" />

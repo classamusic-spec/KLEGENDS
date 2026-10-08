@@ -12,7 +12,7 @@ export function RarityEmblem({ rarity, size = 14 }: { rarity: Rarity; size?: num
   const stroke = material.metal[3];
   const shape = RARITY_EMBLEM[rarity];
   return (
-    <Svg width={size} height={size} viewBox="0 0 16 16" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 16 16" aria-hidden>
       {shape === 'circle' ? <Circle cx={8} cy={8} r={5.2} fill={fill} stroke={stroke} strokeWidth={1} /> : null}
       {shape === 'diamond' ? <Path d="M8 1.8 13.6 8 8 14.2 2.4 8Z" fill={fill} stroke={stroke} strokeWidth={1} /> : null}
       {shape === 'star' ? (

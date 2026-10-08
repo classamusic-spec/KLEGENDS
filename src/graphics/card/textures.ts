@@ -110,6 +110,25 @@ export const loadCardTextures = (cardId: CardId, scale: number, undiscovered = f
   return work;
 };
 
+/**
+ * Bakes several cards one after another (in the given order) so they are
+ * ready before they are shown — e.g. every card of a pack while the pack
+ * is being opened. Failures are logged, never thrown.
+ */
+export const prefetchCardTextures = async (cardIds: readonly CardId[], scale: number): Promise<void> => {
+  for (const cardId of cardIds) {
+    try {
+      await loadCardTextures(cardId, scale);
+    } catch (error) {
+      console.warn('[textures] prefetch failed', cardId, error);
+    }
+  }
+};
+
+/** True when a card's textures are already baked at this scale. */
+export const hasCardTextures = (cardId: CardId, scale: number, undiscovered = false): boolean =>
+  heroCache.has(heroKeyOf(cardId, scale, undiscovered));
+
 const backCache = new Map<number, Promise<SkImage>>();
 
 export const loadCardBack = (scale: number): Promise<SkImage> => {

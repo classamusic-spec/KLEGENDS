@@ -1,4 +1,5 @@
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
+import { Platform } from 'react-native';
 
 import { SOUND_MANIFEST } from './soundManifest';
 import type { SoundCategory, SoundId } from './sounds';
@@ -13,6 +14,8 @@ interface LoopState {
   readonly player: AudioPlayer;
   /** Loop-specific level (0–1) before category volume and ducking. */
   level: number;
+  /** Level the loop is fading toward. */
+  target: number;
   fadeTimer?: ReturnType<typeof setInterval>;
 }
 
@@ -33,6 +36,8 @@ class AudioEngine {
   private duckFactor = 1;
   private initialized = false;
   private suspended = false;
+  /** Browsers block audio until the first user gesture; native platforms never do. */
+  private unlocked = Platform.OS !== 'web';
 
   async init(): Promise<void> {
     if (this.initialized) return;
@@ -43,6 +48,7 @@ class AudioEngine {
       console.warn('[audio] Could not configure the audio session', error);
     }
     settingsStore.subscribe(() => this.refreshLoopVolumes());
+    this.awaitWebGesture();
   }
 
   /** Creates players ahead of time for latency-sensitive moments (e.g. the tear). */
@@ -51,7 +57,7 @@ class AudioEngine {
   }
 
   play(id: SoundId, options: { volume?: number; rate?: number } = {}): void {
-    if (this.suspended) return;
+    if (this.suspended || !this.unlocked) return;
     const spec = SOUND_MANIFEST[id];
     if (!spec) return;
     const volume = spec.gain * categoryVolume(settingsStore.get(), spec.category) * (options.volume ?? 1);
@@ -79,14 +85,14 @@ class AudioEngine {
         const player = createAudioPlayer(spec.source);
         player.loop = true;
         player.volume = 0;
-        loop = { player, level: 0 };
+        loop = { player, level: 0, target: 0 };
         this.loops.set(id, loop);
       } catch (error) {
         console.warn(`[audio] loop ${id} failed`, error);
         return;
       }
     }
-    if (!this.suspended) loop.player.play();
+    if (!this.suspended && this.unlocked) loop.player.play();
     this.fadeLoop(id, level, fadeMs);
   }
 
@@ -95,6 +101,7 @@ class AudioEngine {
     if (!loop) return;
     if (loop.fadeTimer) clearInterval(loop.fadeTimer);
     loop.level = level;
+    loop.target = level;
     this.applyLoopVolume(id, loop);
   }
 
@@ -116,12 +123,26 @@ class AudioEngine {
 
   resume(): void {
     this.suspended = false;
+    if (!this.unlocked) return;
     this.loops.forEach((loop) => {
-      if (loop.level > 0) loop.player.play();
+      if (loop.target > 0) loop.player.play();
     });
   }
 
   // ── internals ──────────────────────────────────────────────────────────
+
+  /** On the web, starts audio (and any loops already requested) on the first pointer or key press. */
+  private awaitWebGesture(): void {
+    if (this.unlocked || typeof document === 'undefined') return;
+    const unlock = () => {
+      document.removeEventListener('pointerdown', unlock, true);
+      document.removeEventListener('keydown', unlock, true);
+      this.unlocked = true;
+      this.resume();
+    };
+    document.addEventListener('pointerdown', unlock, true);
+    document.addEventListener('keydown', unlock, true);
+  }
 
   private pool(id: SoundId): Pool | undefined {
     const existing = this.pools.get(id);
@@ -154,6 +175,7 @@ class AudioEngine {
     const loop = this.loops.get(id);
     if (!loop) return;
     if (loop.fadeTimer) clearInterval(loop.fadeTimer);
+    loop.target = target;
     const start = loop.level;
     const steps = Math.max(1, Math.round(ms / 40));
     let step = 0;

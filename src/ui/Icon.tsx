@@ -68,7 +68,7 @@ export interface IconProps {
 
 export function Icon({ name, size = 24, color = colors.textPrimary, strokeWidth = 1.6, filled = false }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
       <Path
         d={ICONS[name]}
         stroke={color}

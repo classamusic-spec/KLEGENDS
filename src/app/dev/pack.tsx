@@ -38,5 +38,5 @@ export default function PackLab() {
     m.tiltX.set(Number(q.tx ?? 0));
   }, [m, q]);
   if (!pack || !backHandle) return <View style={{ flex: 1 }} />;
-  return <PackStage width={width} height={height} placement={placement} motion={m} packTexture={pack} cardBack={backHandle} />;
+  return <PackStage width={width} height={height} placement={placement} motion={m} packTexture={pack} cardBack={backHandle} stackCount={5} revealRect={{ x: (width - 270) / 2, y: height * 0.44 - 188, width: 270 }} />;
 }

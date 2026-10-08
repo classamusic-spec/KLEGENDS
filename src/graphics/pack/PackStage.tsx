@@ -7,6 +7,7 @@ import {
   Path,
   RadialGradient,
   Rect,
+  RoundedRect,
   Shader,
   Skia,
   vec,
@@ -62,6 +63,8 @@ export interface PackMotion {
   readonly rise: SharedValue<number>;
   /** 0 → 1 the emptied wrapper falling away. */
   readonly fall: SharedValue<number>;
+  /** 0 → 1 the extracted stack travelling to the reveal position. */
+  readonly handoff: SharedValue<number>;
   readonly time: SharedValue<number>;
 }
 
@@ -80,8 +83,10 @@ export interface PackStageProps {
   readonly packTexture: Opaque<SkImage>;
   readonly cardBack: Opaque<SkImage>;
   readonly profileSeed?: number;
-  /** Number of cards inside the pack. */
-  readonly cards?: number;
+  /** Cards currently in the stack (decreases as cards are revealed). */
+  readonly stackCount: number;
+  /** Where the stack's top card lands for the reveal (screen points). */
+  readonly revealRect: { readonly x: number; readonly y: number; readonly width: number };
 }
 
 /**
@@ -90,7 +95,7 @@ export interface PackStageProps {
  * releases the card stack. Purely presentational: gestures and the reveal
  * state machine live in the treasury feature.
  */
-export function PackStage({ width, height, placement, motion, packTexture, cardBack, profileSeed = 7, cards = 5 }: PackStageProps) {
+export function PackStage({ width, height, placement, motion, packTexture, cardBack, profileSeed = 7, stackCount, revealRect }: PackStageProps) {
   const effect = useMemo(() => getPackEffect(), []);
   const profile = useMemo(() => makeTearProfile(profileSeed), [profileSeed]);
   const textures = useMemo(() => stripTextureCoords(profile).map((p) => vec(p.x, p.y)), [profile]);
@@ -195,26 +200,40 @@ export function PackStage({ width, height, placement, motion, packTexture, cardB
     return b.build();
   });
 
-  const stackTransform = useDerivedValue(() => [{ translateY: -m.rise.get() }]);
   const glowOpacity = useDerivedValue(() => m.glow.get());
   const cardX = (PACK_W - PACK_CARD_W) / 2;
 
+  // The stack lives in screen space: it follows the pack while inside, rises
+  // as it is drawn out, then travels to the reveal position (handoff).
+  const targetScale = revealRect.width / PACK_CARD_W;
+  const stackTransform = useDerivedValue(() => {
+    const e = m.entrance.get();
+    const h = m.handoff.get();
+    const fromX = px + (m.nudgeX.get() + cardX) * scale;
+    const fromY = py + (1 - e) * 60 + (m.nudgeY.get() + STACK_REST_Y - m.rise.get()) * scale;
+    const fromS = scale * (0.94 + 0.06 * e);
+    return [
+      { translateX: fromX + (revealRect.x - fromX) * h },
+      { translateY: fromY + (revealRect.y - fromY) * h },
+      { scale: fromS + (targetScale - fromS) * h },
+    ];
+  });
+
   return (
     <Canvas style={{ width, height }} pointerEvents="none">
+      {/* Card stack (drawn first so the wrapper hides it until it opens). */}
+      <Group transform={stackTransform}>
+        {Array.from({ length: stackCount }, (_, i) => {
+          const depth = stackCount - 1 - i;
+          return (
+            <Group key={i} transform={[{ translateY: depth * 1.7 }, { translateX: depth * 0.5 }]}>
+              <RoundedRect x={-0.8} y={-0.8} width={PACK_CARD_W + 1.6} height={PACK_CARD_H + 1.6} r={9.5} color="#3A2D18" />
+              <SkiaImage image={back} x={0} y={0} width={PACK_CARD_W} height={PACK_CARD_H} fit="fill" />
+            </Group>
+          );
+        })}
+      </Group>
       <Group transform={packTransform} opacity={packOpacity}>
-        {/* Card stack inside the pack (hidden by the wrapper until it opens). */}
-        <Group transform={stackTransform}>
-          {Array.from({ length: cards }, (_, i) => {
-            const depth = cards - 1 - i;
-            return (
-              <Group key={i} transform={[{ translateY: STACK_REST_Y + depth * 1.6 }, { translateX: cardX + depth * 0.4 }]}>
-                <Rect x={-0.6} y={-0.6} width={PACK_CARD_W + 1.2} height={PACK_CARD_H + 1.2} color="#3A2D18" />
-                <SkiaImage image={back} x={0} y={0} width={PACK_CARD_W} height={PACK_CARD_H} fit="fill" />
-              </Group>
-            );
-          })}
-        </Group>
-
         {/* Warm light escaping from inside the opened seal. */}
         <Group opacity={glowOpacity}>
           <Oval x={PACK_W * 0.12} y={SEAL_Y - 30} width={PACK_W * 0.76} height={60}>

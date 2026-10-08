@@ -32,15 +32,15 @@ export function ProgressBar({ value, height = 6, accessibilityLabel, style }: Pr
       style={[styles.track, { height, borderRadius: height / 2 }, style]}
     >
       <Animated.View style={[styles.fill, { borderRadius: height / 2 }, fillStyle]}>
-        <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" accessible={false}>
+        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none" aria-hidden>
           <Defs>
-            <LinearGradient id="pb" x1="0" y1="0" x2="1" y2="0">
+            <LinearGradient id="kl-progress" x1="0" y1="0" x2="1" y2="0">
               <Stop offset="0" stopColor="#8F6C36" />
               <Stop offset="0.7" stopColor="#D8B675" />
               <Stop offset="1" stopColor="#F6E3AE" />
             </LinearGradient>
           </Defs>
-          <Rect width="100%" height="100%" fill="url(#pb)" />
+          <Rect width="100%" height="100%" fill="url(#kl-progress)" />
         </Svg>
       </Animated.View>
     </View>
