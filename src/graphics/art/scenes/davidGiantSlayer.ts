@@ -1,6 +1,6 @@
 import { cloudBank, dustMotes, godRays, grain, haze, ridge, ridgePoints, sky, sunGlow, vignette, water } from '../environment';
 import { body, BUILDS, capsule, curlyHair, garment, oval, placeFigure, stripSkirt, type Pose } from '../figures';
-import { drawSubject, type ArtScene, type SceneContext } from '../scene';
+import { drawProp, drawSubject, type ArtScene, type SceneContext } from '../scene';
 import { BlendMode, linear, makePaint, polygon, radial, smoothPath, withAlpha, type Pt } from '../../skia/draw';
 
 /**
@@ -162,7 +162,7 @@ export const davidGiantSlayer: ArtScene = {
 
     // Foreground rocks framing David.
     const rocks = smoothPath([[-30, 340], [4, 324], [36, 327], [62, 338], [76, 356], [-30, 366]], 450);
-    canvas.drawPath(rocks, makePaint({ shader: linear([0, 340], [0, 400], ['#2A1B10', '#0A0705']) }));
+    drawProp(ctx, rocks, makePaint({ shader: linear([0, 340], [0, 400], ['#2A1B10', '#0A0705']) }));
 
     if (mode === 'full') {
       // The sling's whirl: a fading arc of light around the raised hand.

@@ -245,3 +245,94 @@ export const drawLitFigure = (canvas: SkCanvas, path: SkPath, o: LightingOptions
     );
   });
 };
+
+/** A long robe that reaches the ground (women, elders, royalty). */
+export const robe = (pose: Pose, { hemY = -1.2, flare = 13, back = 0, front = 0, sway = 0 }: { hemY?: number; flare?: number; back?: number; front?: number; sway?: number } = {}): SkPath =>
+  garment(pose, { hemY, flare, back, front, sway });
+
+/**
+ * A head covering draped over the head and down the back to `bottomY`
+ * (local units). `facing` is the direction the face looks (+1 = +x).
+ */
+export const veil = (head: Pt, r: number, facing: 1 | -1, bottomY: number, fullness = 1): SkPath => {
+  const f = facing;
+  const midY = (head[1] + bottomY) / 2;
+  return smoothPath([
+    [head[0] + r * 0.62 * f, head[1] - r * 0.9],
+    [head[0] - r * 0.3 * f, head[1] - r * 1.32],
+    [head[0] - r * 1.35 * f, head[1] - r * 0.35],
+    [head[0] - r * 1.75 * fullness * f, midY],
+    [head[0] - r * 2.05 * fullness * f, bottomY],
+    [head[0] - r * 0.15 * f, bottomY + 1.5],
+    [head[0] + r * 0.35 * f, head[1] + r * 1.6],
+    [head[0] + r * 0.98 * f, head[1] + r * 0.15],
+    [head[0] + r * 0.62 * f, head[1] - r * 0.9],
+  ]);
+};
+
+/** A shepherd's crook: a straight staff whose top curls over toward +x. */
+export const crook = (foot: Pt, top: Pt, width: number, r = 5.5): SkPath => {
+  const c: Pt = [top[0] + r, top[1]];
+  const arc: Pt[] = [];
+  for (let i = 0; i <= 10; i++) {
+    const a = Math.PI + (i / 10) * (Math.PI + 0.5);
+    arc.push([c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r]);
+  }
+  return union([capsule(foot, top, width, width), strokeOutline(smoothPath(arc), width * 0.95)]);
+};
+
+/**
+ * A sheep (feet on y = 0, ~32 units long, facing +x). `grazing` lowers the
+ * head to the grass.
+ */
+export const sheep = (grazing = false, wool = 1): SkPath => {
+  const parts: SkPath[] = [];
+  for (const [cx, cy, r] of [
+    [-10, -14.5, 6.6],
+    [-4, -17, 7.4],
+    [3, -17.2, 7.2],
+    [9, -14.6, 6.2],
+    [-8.5, -9.8, 6.4],
+    [0, -9.6, 7],
+    [7.5, -9.8, 5.8],
+  ] as const) {
+    parts.push(Skia.Path.Circle(cx, cy, r * wool));
+  }
+  const head: Pt = grazing ? [17.5, -5.5] : [16.5, -17];
+  parts.push(capsule([11, -13], head, 6.2, 4.4));
+  parts.push(oval(head[0] + 1.4, head[1] + (grazing ? 1.4 : 0.6), 4.2, 3.1));
+  parts.push(oval(head[0] - 2.2, head[1] - 2.4, 2.6, 1.3)); // ear
+  for (const x of [-9, -4.5, 4.5, 9]) parts.push(capsule([x, -7], [x + 0.4, 0], 2.4, 1.8));
+  return union(parts);
+};
+
+/**
+ * An olive tree: a short, gnarled trunk splitting into crooked limbs under a
+ * broad, open canopy of small leaf clusters (feet on y = 0, ~`height` tall).
+ */
+export const oliveTree = (rand: { range: (a: number, b: number) => number }, height = 100): SkPath => {
+  const s = new Silhouette();
+  const h = height;
+  // Gnarled trunk: two twisted strands that part and rejoin.
+  s.add(capsule([-h * 0.04, 0], [h * 0.02, -h * 0.2], h * 0.16, h * 0.1));
+  s.add(capsule([h * 0.02, -h * 0.2], [-h * 0.06, -h * 0.36], h * 0.1, h * 0.08));
+  s.add(capsule([h * 0.03, -h * 0.02], [h * 0.07, -h * 0.24], h * 0.08, h * 0.06));
+  // Crooked limbs.
+  const limbs: [Pt, Pt][] = [
+    [[-h * 0.06, -h * 0.36], [-h * 0.34, -h * 0.5]],
+    [[-h * 0.06, -h * 0.36], [-h * 0.02, -h * 0.62]],
+    [[h * 0.07, -h * 0.24], [h * 0.3, -h * 0.48]],
+    [[-h * 0.02, -h * 0.5], [h * 0.14, -h * 0.66]],
+  ];
+  for (const [a, b] of limbs) s.add(capsule(a, b, h * 0.05, h * 0.028));
+  // Canopy: many small clusters across a wide ellipse, thinner at the edges.
+  for (let i = 0; i < 46; i++) {
+    const a = rand.range(0, Math.PI * 2);
+    const d = Math.sqrt(rand.range(0, 1));
+    const cx = Math.cos(a) * d * h * 0.52;
+    const cy = -h * 0.62 + Math.sin(a) * d * h * 0.2;
+    const r = rand.range(0.035, 0.075) * h * (1.15 - d * 0.5);
+    s.add(oval(cx, cy, r * 1.6, r));
+  }
+  return s.build();
+};

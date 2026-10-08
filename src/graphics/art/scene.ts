@@ -1,4 +1,4 @@
-import type { SkCanvas, SkPath, SkRect } from '@shopify/react-native-skia';
+import type { SkCanvas, SkPaint, SkPath, SkRect } from '@shopify/react-native-skia';
 
 import { drawLitFigure, type LightingOptions } from './figures';
 import { makePaint, type Rng } from '../skia/draw';
@@ -37,4 +37,9 @@ export const drawSubject = (ctx: SceneContext, path: SkPath, lighting: LightingO
     return;
   }
   drawLitFigure(ctx.canvas, path, lighting);
+};
+
+/** Draws a foreground prop (rock, ground) that turns to shadow on undiscovered cards. */
+export const drawProp = (ctx: SceneContext, path: SkPath, paint: SkPaint) => {
+  ctx.canvas.drawPath(path, ctx.mode === 'silhouette' ? makePaint({ color: SILHOUETTE_STYLE.fill }) : paint);
 };

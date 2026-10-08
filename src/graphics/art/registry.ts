@@ -2,6 +2,12 @@ import { drawCrown } from './emblems';
 import { dustMotes, godRays, grain, ridge, ridgePoints, sky, sunGlow, vignette } from './environment';
 import type { ArtScene } from './scene';
 import { davidGiantSlayer } from './scenes/davidGiantSlayer';
+import { davidShepherd } from './scenes/davidShepherd';
+import { esther } from './scenes/esther';
+import { joshua } from './scenes/joshua';
+import { daniel, davidKing, davidPsalmist, elijah, moses, noah } from './scenes/oldTestament';
+import { ruth } from './scenes/ruth';
+import { slingStones } from './scenes/slingStones';
 
 /**
  * A dignified stand-in for cards whose illustration has not been painted
@@ -30,6 +36,17 @@ const pendingIllustration = (key: string, seed: number): ArtScene => ({
 
 const SCENES: Readonly<Record<string, ArtScene>> = {
   [davidGiantSlayer.key]: davidGiantSlayer,
+  [ruth.key]: ruth,
+  [davidShepherd.key]: davidShepherd,
+  [joshua.key]: joshua,
+  [esther.key]: esther,
+  [slingStones.key]: slingStones,
+  [noah.key]: noah,
+  [moses.key]: moses,
+  [davidKing.key]: davidKing,
+  [davidPsalmist.key]: davidPsalmist,
+  [elijah.key]: elijah,
+  [daniel.key]: daniel,
 };
 
 let fallbackSeed = 100;
